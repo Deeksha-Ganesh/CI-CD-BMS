@@ -11,7 +11,7 @@ pipeline {
         }
         stage('Build docker image') {
             steps {
-                sh 'docker build -t $DOCKER_IMAGE:latest .'
+                sh 'docker build -t $DOCKER_IMAGE:$BUILD_NUMBER .'
             }
         }
         stage('Login to docker hub') {
@@ -23,7 +23,7 @@ pipeline {
         }
         stage('Push Docker image to docker hub') {
             steps {
-                sh 'docker push $DOCKER_IMAGE:latest'
+                sh 'docker push $DOCKER_IMAGE:$BUILD_NUMBER'
             }
         }
         stage('Deployment in kubernetes') {
@@ -31,7 +31,7 @@ pipeline {
                 withAWS(credentials: 'aws_cred', region: 'ap-south-1') {
                     sh '''
                         aws eks update-kubeconfig --name my-eks-cluster --region ap-south-1
-                        kubectl set image deployment/bms-deployment bms-container=$DOCKER_IMAGE:latest
+                        kubectl set image deployment/bms-deployment bms-container=$DOCKER_IMAGE:$BUILD_NUMBER
                         kubectl apply -f deployment.yaml
                         kubectl apply -f service.yaml
                     '''
