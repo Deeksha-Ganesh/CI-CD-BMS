@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bmswebapp-deployment
+  labels:
+    app: bmswebapp
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: bmswebapp
+  template:
+    metadata:
+      labels:
+        app: bmswebapp
+    spec:
+      containers:
+      - name: bmswebapp
+        image: deekshaganesh/bmswebsite:latest
+        ports:
+        - containerPort: 80
