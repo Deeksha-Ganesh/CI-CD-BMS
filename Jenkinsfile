@@ -1,42 +1,51 @@
 pipeline {
     agent any
-    environment {
-        DOCKER_IMAGE = "deekshaganesh/bmswebsite"
+
+    tools {
+        jdk 'jdk21'
+        nodejs 'nodejs24'
     }
+
+    environment {
+        SCANNER_HOME = tool 'Sonar-Scanner'
+        DOCKER_IMAGE = 'deekshaganesh/bms:latest'
+        EKS_CLUSTER_NAME = 'bms-cluster'
+        AWS_REGION = 'us-east-1'
+    }
+
     stages {
-        stage('Clone code') {
+        stage('Clean Workspace') {
+            steps {
+                cleanWs()
+            }
+        }
+
+        stage('Checkout from Git') {
             steps {
                 git branch: 'main', url: 'https://github.com/Deeksha-Ganesh/CI-CD-BMS.git'
+                sh 'ls -la'  // Verify files after checkout
             }
         }
-        stage('Build docker image') {
+
+        stage('SonarQube Analysis') {
             steps {
-                sh 'docker build -t $DOCKER_IMAGE:$BUILD_NUMBER .'
-            }
-        }
-        stage('Login to docker hub') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub_cred', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
-                }
-            }
-        }
-        stage('Push Docker image to docker hub') {
-            steps {
-                sh 'docker push $DOCKER_IMAGE:$BUILD_NUMBER'
-            }
-        }
-        stage('Deployment in kubernetes') {
-            steps {
-                withAWS(credentials: 'aws_cred', region: 'ap-south-1') {
-                    sh '''
-                        aws eks update-kubeconfig --name my-eks-cluster --region ap-south-1
-                        kubectl set image deployment/bms-deployment bms-container=$DOCKER_IMAGE:$BUILD_NUMBER
-                        kubectl apply -f deployment.yaml
-                        kubectl apply -f service.yaml
+                withSonarQubeEnv('SonarQube-Server') {
+                    sh ''' 
+                    $SCANNER_HOME/bin/sonar-scanner \
+                        -Dsonar.projectName=BMS \
+                        -Dsonar.projectKey=BMS
                     '''
                 }
             }
         }
-    }
-}
+
+        stage('Quality Gate') {
+            steps {
+                script {
+                    waitForQualityGate abortPipeline: true, credentialsId: 'SonarQube'
+                }
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
