@@ -28,7 +28,7 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 dir('webapp') {   
-                    sh 'pwd && ls -la'  // Ensure we're in correct directory
+                    sh 'pwd && ls -la'
                     script {
                         try {
                             withSonarQubeEnv('SonarQube') {
@@ -36,7 +36,6 @@ pipeline {
                             }
                         } catch (err) {
                             echo "SonarQube analysis failed: ${err}"
-                            // Continue the pipeline even if SonarQube fails
                         }
                     }
                 }
@@ -60,9 +59,8 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                dir('webapp') {
-                    sh 'docker build -t $DOCKER_IMAGE:$BUILD_NUMBER .'
-                }
+                // Build Docker from repo root (where Dockerfile exists)
+                sh 'docker build -t $DOCKER_IMAGE:$BUILD_NUMBER .'
             }
         }
 
