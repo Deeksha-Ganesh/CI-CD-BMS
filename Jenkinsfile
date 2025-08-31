@@ -7,6 +7,16 @@ pipeline {
         KUBECONFIG = '/var/lib/jenkins/.kube/config'            // Path to your kubeconfig
     }
 
+    stage('Debug Environment') {
+    steps {
+        sh 'echo $PATH'
+        sh 'which docker || echo "docker not found"'
+        sh 'which kubectl || echo "kubectl not found"'
+        sh 'which trivy || echo "trivy not found"'
+        sh 'which mvn || echo "mvn not found"'
+    }
+}
+
     stages {
         stage('Checkout') {
             steps {
