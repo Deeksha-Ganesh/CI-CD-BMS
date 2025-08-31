@@ -60,18 +60,19 @@ pipeline {
         }
 
         stage('Build Docker Image') {
-            steps {
-                script {
-                    try {
-                        // Build Docker image with frontend build inside Dockerfile
-                        sh 'docker build -t $DOCKER_IMAGE:$BUILD_NUMBER .'
-                    } catch (err) {
-                        echo "Docker build failed: ${err}"
-                        error("Stopping pipeline because Docker build failed")
-                    }
-                }
+    steps {
+        script {
+            try {
+                // Run docker build from repo root so 'webapp' folder is in context
+                sh 'docker build -t $DOCKER_IMAGE:$BUILD_NUMBER .'
+            } catch (err) {
+                echo "Docker build failed: ${err}"
+                error("Stopping pipeline because Docker build failed")
             }
         }
+    }
+}
+
 
         stage('Push Docker Image') {
             steps {
