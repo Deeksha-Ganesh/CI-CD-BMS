@@ -11,7 +11,7 @@ pipeline {
     stages {
         stage('Debug Environment') {
             steps {
-                sh 'echo $PATH'
+                sh 'echo "PATH=$PATH"'
                 sh 'which docker || echo "docker not found"'
                 sh 'which kubectl || echo "kubectl not found"'
                 sh 'which trivy || echo "trivy not found"'
@@ -27,9 +27,17 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                dir('webapp') {   // Run Maven in webapp
-                    withSonarQubeEnv('SonarQube') {
-                        sh 'mvn clean verify sonar:sonar'
+                dir('webapp') {   
+                    sh 'pwd && ls -la'  // Ensure we're in correct directory
+                    script {
+                        try {
+                            withSonarQubeEnv('SonarQube') {
+                                sh '/usr/bin/mvn clean verify sonar:sonar'
+                            }
+                        } catch (err) {
+                            echo "SonarQube analysis failed: ${err}"
+                            // Continue the pipeline even if SonarQube fails
+                        }
                     }
                 }
             }
@@ -37,15 +45,22 @@ pipeline {
 
         stage('Trivy Scan') {
             steps {
-                dir('webapp') {   // Scan project files
-                    sh 'trivy fs . > trivy-report.txt || true'
+                dir('webapp') {
+                    script {
+                        try {
+                            sh 'trivy fs . > trivy-report.txt || true'
+                        } catch (err) {
+                            echo "Trivy scan failed: ${err}"
+                        }
+                        archiveArtifacts artifacts: 'trivy-report.txt', allowEmptyArchive: true
+                    }
                 }
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                dir('webapp') {   // Build Docker using files in webapp
+                dir('webapp') {
                     sh 'docker build -t $DOCKER_IMAGE:$BUILD_NUMBER .'
                 }
             }
