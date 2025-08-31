@@ -29,7 +29,7 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                dir('webapp') {   
+                dir('webapp') {
                     sh 'pwd && ls -la'
                     script {
                         try {
@@ -59,25 +59,11 @@ pipeline {
             }
         }
 
-        stage('Build Frontend') {
-            steps {
-                dir('webapp') {
-                    script {
-                        try {
-                            sh 'npm install'
-                            sh 'npm run build'
-                        } catch (err) {
-                            echo "Frontend build failed, skipping: ${err}"
-                        }
-                    }
-                }
-            }
-        }
-
         stage('Build Docker Image') {
             steps {
                 script {
                     try {
+                        // Build Docker image with frontend build inside Dockerfile
                         sh 'docker build -t $DOCKER_IMAGE:$BUILD_NUMBER .'
                     } catch (err) {
                         echo "Docker build failed: ${err}"
