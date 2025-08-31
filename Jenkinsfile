@@ -5,7 +5,7 @@ pipeline {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-cred')
         DOCKER_IMAGE = "deekshaganesh/bmsapp"
         KUBECONFIG = '/var/lib/jenkins/.kube/config'
-        PATH = "/usr/local/bin:/usr/bin:/bin:$PATH"  // Ensure Jenkins sees docker/kubectl/mvn/trivy
+        PATH = "/usr/local/bin:/usr/bin:/bin:$PATH"  // Ensure Jenkins sees docker/kubectl/mvn/npm/node/trivy
     }
 
     stages {
@@ -16,6 +16,8 @@ pipeline {
                 sh 'which kubectl || echo "kubectl not found"'
                 sh 'which trivy || echo "trivy not found"'
                 sh 'which mvn || echo "mvn not found"'
+                sh 'which npm || echo "npm not found"'
+                sh 'which node || echo "node not found"'
             }
         }
 
@@ -57,6 +59,21 @@ pipeline {
             }
         }
 
+        stage('Build Frontend') {
+            steps {
+                dir('webapp') {
+                    script {
+                        try {
+                            sh 'npm install'
+                            sh 'npm run build'
+                        } catch (err) {
+                            echo "Frontend build failed, skipping: ${err}"
+                        }
+                    }
+                }
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
                 script {
@@ -83,8 +100,8 @@ pipeline {
             steps {
                 script {
                     sh """
-                        sed 's|\\\${BUILD_NUMBER}|$BUILD_NUMBER|g' k8s/deployment.yaml | kubectl apply -f -
-                        kubectl apply -f k8s/service.yaml
+                        sed 's|\\\${BUILD_NUMBER}|$BUILD_NUMBER|g' deployment.yaml | kubectl apply -f -
+                        kubectl apply -f service.yaml
                     """
                     sh "kubectl rollout status deployment/bms-deployment"
                 }
