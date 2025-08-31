@@ -1,4 +1,6 @@
 FROM nginx:alpine
-COPY . /usr/share/nginx/html
-EXPOSE port 80
+RUN rm -rf /usr/share/nginx/html/*
+COPY webapp/dist/ /usr/share/nginx/html/
+EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
+
