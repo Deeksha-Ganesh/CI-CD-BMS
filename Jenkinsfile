@@ -27,21 +27,27 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('SonarQube') {
-                    sh 'mvn clean verify sonar:sonar'
+                dir('webapp') {   // Run Maven in webapp
+                    withSonarQubeEnv('SonarQube') {
+                        sh 'mvn clean verify sonar:sonar'
+                    }
                 }
             }
         }
 
         stage('Trivy Scan') {
             steps {
-                sh 'trivy fs . > trivy-report.txt || true'
+                dir('webapp') {   // Scan project files
+                    sh 'trivy fs . > trivy-report.txt || true'
+                }
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t $DOCKER_IMAGE:$BUILD_NUMBER .'
+                dir('webapp') {   // Build Docker using files in webapp
+                    sh 'docker build -t $DOCKER_IMAGE:$BUILD_NUMBER .'
+                }
             }
         }
 
