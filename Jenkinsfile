@@ -11,13 +11,15 @@ pipeline {
     stages {
         stage('Debug Environment') {
             steps {
-                sh 'echo "PATH=$PATH"'
-                sh 'which docker || echo "docker not found"'
-                sh 'which kubectl || echo "kubectl not found"'
-                sh 'which trivy || echo "trivy not found"'
-                sh 'which mvn || echo "mvn not found"'
-                sh 'which npm || echo "npm not found"'
-                sh 'which node || echo "node not found"'
+                sh '''
+                echo "PATH=$PATH"
+                which docker || echo "docker not found"
+                which kubectl || echo "kubectl not found"
+                which trivy || echo "trivy not found"
+                which mvn || echo "mvn not found"
+                which npm || echo "npm not found"
+                which node || echo "node not found"
+                '''
             }
         }
 
@@ -29,7 +31,7 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                dir('webapp') {   
+                dir('webapp') {
                     sh 'pwd && ls -la'
                     script {
                         try {
@@ -89,21 +91,21 @@ pipeline {
 
         stage('Push Docker Image') {
             steps {
-                sh """
-                    echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin
-                    docker push $DOCKER_IMAGE:$BUILD_NUMBER
-                """
+                sh '''
+                echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin
+                docker push $DOCKER_IMAGE:$BUILD_NUMBER
+                '''
             }
         }
 
         stage('Deploy to Kubernetes') {
             steps {
                 script {
-                    sh """
-                        sed 's|\\\${BUILD_NUMBER}|$BUILD_NUMBER|g' deployment.yaml | kubectl apply -f -
-                        kubectl apply -f service.yaml
-                    """
-                    sh "kubectl rollout status deployment/bms-deployment"
+                    sh '''
+                    sed "s|\\${BUILD_NUMBER}|$BUILD_NUMBER|g" deployment.yaml | kubectl apply -f -
+                    kubectl apply -f service.yaml
+                    kubectl rollout status deployment/bms-deployment
+                    '''
                 }
             }
         }
