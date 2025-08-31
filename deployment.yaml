@@ -16,6 +16,6 @@ spec:
     spec:
       containers:
       - name: bms
-        image: deeksha-ganesh/bms:latest   # matches Jenkins
+        image: deeksha-ganesh/bms:${BUILD_NUMBER}
         ports:
         - containerPort: 80
