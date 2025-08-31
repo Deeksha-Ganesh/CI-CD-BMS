@@ -58,21 +58,6 @@ pipeline {
             }
         }
 
-        stage('Build Frontend') {
-            steps {
-                dir('webapp') {
-                    script {
-                        try {
-                            sh 'npm install'
-                            sh 'npm run build'
-                        } catch (err) {
-                            error "Frontend build failed: ${err}"
-                        }
-                    }
-                }
-            }
-        }
-
         stage('Build Docker Image') {
             steps {
                 // Dockerfile expects webapp/dist/ to exist relative to root
