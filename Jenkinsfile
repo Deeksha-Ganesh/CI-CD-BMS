@@ -5,7 +5,7 @@ pipeline {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-cred')
         DOCKER_IMAGE = "deekshaganesh/bmsapp"
         KUBECONFIG = '/var/lib/jenkins/.kube/config'
-        PATH = "/usr/local/bin:/usr/bin:/bin:$PATH"  // Ensure Jenkins sees docker/kubectl/mvn/trivy/npm
+        PATH = "/usr/local/bin:/usr/bin:/bin:$PATH"  // Ensure Jenkins sees docker/kubectl/mvn/trivy/npm/node
     }
 
     stages {
@@ -17,6 +17,7 @@ pipeline {
                 sh 'which trivy || echo "trivy not found"'
                 sh 'which mvn || echo "mvn not found"'
                 sh 'which npm || echo "npm not found"'
+                sh 'which node || echo "node not found"'
             }
         }
 
@@ -58,10 +59,31 @@ pipeline {
             }
         }
 
+        stage('Build Frontend') {
+            steps {
+                dir('webapp') {
+                    script {
+                        try {
+                            sh 'npm install'
+                            sh 'npm run build'
+                        } catch (err) {
+                            echo "Frontend build failed, skipping: ${err}"
+                        }
+                    }
+                }
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
-                // Dockerfile expects webapp/dist/ to exist relative to root
-                sh 'docker build -t $DOCKER_IMAGE:$BUILD_NUMBER .'
+                script {
+                    try {
+                        sh 'docker build -t $DOCKER_IMAGE:$BUILD_NUMBER .'
+                    } catch (err) {
+                        echo "Docker build failed: ${err}"
+                        error("Stopping pipeline because Docker build failed")
+                    }
+                }
             }
         }
 
