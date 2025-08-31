@@ -56,6 +56,14 @@ pipeline {
                 }
             }
         }
+        stage('Build Frontend') {
+    steps {
+        dir('webapp') {
+            sh 'npm install'
+            sh 'npm run build'
+        }
+    }
+}
 
         stage('Build Docker Image') {
             steps {
