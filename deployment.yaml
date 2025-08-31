@@ -16,6 +16,8 @@ spec:
     spec:
       containers:
       - name: bms
-        image: deeksha-ganesh/bms:${BUILD_NUMBER}
+        image: deekshaganesh/bmsapp:${BUILD_NUMBER}
         ports:
         - containerPort: 80
+      imagePullSecrets:
+      - name: dockerhub-cred
