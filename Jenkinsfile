@@ -5,7 +5,7 @@ pipeline {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-cred')
         DOCKER_IMAGE = "deekshaganesh/bmsapp"
         KUBECONFIG = '/var/lib/jenkins/.kube/config'
-        PATH = "/usr/local/bin:/usr/bin:/bin:$PATH"  // Ensure Jenkins sees docker/kubectl/mvn/trivy/npm/node
+        PATH = "/usr/local/bin:/usr/bin:/bin:$PATH"  // Ensure Jenkins sees docker/kubectl/mvn/trivy
     }
 
     stages {
@@ -16,8 +16,6 @@ pipeline {
                 sh 'which kubectl || echo "kubectl not found"'
                 sh 'which trivy || echo "trivy not found"'
                 sh 'which mvn || echo "mvn not found"'
-                sh 'which npm || echo "npm not found"'
-                sh 'which node || echo "node not found"'
             }
         }
 
@@ -29,7 +27,7 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                dir('webapp') {
+                dir('webapp') {   
                     sh 'pwd && ls -la'
                     script {
                         try {
@@ -60,19 +58,17 @@ pipeline {
         }
 
         stage('Build Docker Image') {
-    steps {
-        script {
-            try {
-                // Run docker build from repo root so 'webapp' folder is in context
-                sh 'docker build -t $DOCKER_IMAGE:$BUILD_NUMBER .'
-            } catch (err) {
-                echo "Docker build failed: ${err}"
-                error("Stopping pipeline because Docker build failed")
+            steps {
+                script {
+                    try {
+                        sh 'docker build -t $DOCKER_IMAGE:$BUILD_NUMBER .'
+                    } catch (err) {
+                        echo "Docker build failed: ${err}"
+                        error("Stopping pipeline because Docker build failed")
+                    }
+                }
             }
         }
-    }
-}
-
 
         stage('Push Docker Image') {
             steps {
